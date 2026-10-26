@@ -1,0 +1,44 @@
+diff --git a/crates/apxinf-py/src/lib.rs b/crates/apxinf-py/src/lib.rs
+index 2b6d5c0..867ec99 100644
+--- a/crates/apxinf-py/src/lib.rs
++++ b/crates/apxinf-py/src/lib.rs
+@@ -1771,3 +1771,39 @@ mod tests {
+         assert!(PackedRgbU8::from_slices(&vec![part; 65_536]).is_err());
+     }
+ }
++
++
++// Local compatibility patch for the SM89 Python wheel at engine 7f37642.
++// The target build omits the Blackwell-only GDN launcher but still references
++// its C ABI. PI0.5 does not use this launcher. Unsupported calls must fail.
++// Applying this patch requires an explicit SM89 build acknowledgement.
++#[cfg(feature = "cuda")]
++const _: &str = env!("APXINF_SM89_GDN_COMPAT", "Apply this compatibility patch only to the verified SM89 wheel build");
++
++#[cfg(feature = "cuda")]
++#[no_mangle]
++pub extern "C" fn apxinf_flashinfer_gdn_launch(
++    _map_q: *const std::ffi::c_void,
++    _map_k: *const std::ffi::c_void,
++    _map_v: *const std::ffi::c_void,
++    _map_out: *const std::ffi::c_void,
++    _gate_log: *mut f32,
++    _beta: *mut f32,
++    _cu_seqlens: *mut i32,
++    _state: *mut f32,
++    _state_indices: *mut i32,
++    _checkpoint_state: *mut f32,
++    _cu_checkpoints: *mut i32,
++    _tensor_map_workspace: *mut u8,
++    _state_stride: i64,
++    _scale: f32,
++    _num_seqs: i32,
++    _q_heads: i32,
++    _v_heads: i32,
++    _total_tiles: i32,
++    _grid_x: i32,
++    _stream: *mut std::ffi::c_void,
++) -> i32 {
++    801 // cudaErrorNotSupported; never claim a successful GDN launch.
++}
++
